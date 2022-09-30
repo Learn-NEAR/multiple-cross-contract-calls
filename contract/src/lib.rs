@@ -1,6 +1,8 @@
 use near_sdk::{
     borsh::{self, BorshDeserialize, BorshSerialize},
-    env, log, near_bindgen, Gas, Promise, PromiseResult,
+    env, log, near_bindgen,
+    serde::Deserialize,
+    AccountId, Gas, Promise, PromiseResult,
 };
 
 mod dynamic_callbacks;
@@ -9,6 +11,14 @@ const XCC_GAS: Gas = Gas(5 * 10u64.pow(13));
 const HELLO_CONTRACT: &str = "hello-nearverse.testnet";
 const COUNTER_CONTRACT: &str = "counter-nearverse.testnet";
 const GUESTBOOK_CONTRACT: &str = "guestbook-nearverse.testnet";
+
+#[derive(Deserialize, Debug)]
+#[serde(crate = "near_sdk::serde")]
+struct PostedMessage {
+    pub premium: bool,
+    pub sender: AccountId,
+    pub text: String,
+}
 
 // Define the contract structure
 #[near_bindgen]
@@ -38,7 +48,7 @@ impl Contract {
 
         // We create a promise that calls the `` function on the GUESTBOOK_CONTRACT
         let guestbook_promise = Promise::new(GUESTBOOK_CONTRACT.parse().unwrap()).function_call(
-            "".to_owned(),
+            "get_messages".to_owned(),
             vec![],
             0,
             XCC_GAS,
@@ -63,16 +73,18 @@ impl Contract {
         // Handle the result of the promise.
         match hello_result {
             PromiseResult::Failed => {
-                log!("hello-nearverse call failed")
+                log!("hello-nearverse call failed");
             }
             PromiseResult::NotReady => {
-                log!("hello-nearverse promise not ready yet")
+                log!("hello-nearverse promise not ready yet");
             }
             PromiseResult::Successful(hello_value) => {
                 if let Ok(message) = near_sdk::serde_json::from_slice::<String>(&hello_value) {
                     log!(format!(
                         "This is the result of the get_greeting call: {message}"
                     ));
+                } else {
+                    log!("There was an error deserializeing the value from the get_greeting call.");
                 }
             }
         }
@@ -83,14 +95,16 @@ impl Contract {
         // Handle the result of the promise.
         match counter_result {
             PromiseResult::Failed => {
-                log!("counter-nearverse call failed")
+                log!("counter-nearverse call failed");
             }
             PromiseResult::NotReady => {
-                log!("counter-nearverse promise not ready yet")
+                log!("counter-nearverse promise not ready yet");
             }
             PromiseResult::Successful(counter_value) => {
                 if let Ok(num) = near_sdk::serde_json::from_slice::<i64>(&counter_value) {
                     log!(format!("This is the result of the get_num call: {num}"));
+                } else {
+                    log!("There was an error deserializeing the value from the get_num call.");
                 }
             }
         }
@@ -101,14 +115,20 @@ impl Contract {
         // Handle the result of the promise.
         match guestbook_result {
             PromiseResult::Failed => {
-                log!("guestbook-nearverse call failed")
+                log!("guestbook-nearverse call failed");
             }
             PromiseResult::NotReady => {
-                log!("guestbook-nearverse promise not ready yet")
+                log!("guestbook-nearverse promise not ready yet");
             }
-            PromiseResult::Successful(value) => {
-                if let Ok(num) = near_sdk::serde_json::from_slice::<i64>(&value) {
-                    log!(format!("This is the result of the call: {num}"));
+            PromiseResult::Successful(guestbook_value) => {
+                if let Ok(messages) =
+                    near_sdk::serde_json::from_slice::<Vec<PostedMessage>>(&guestbook_value)
+                {
+                    log!(format!(
+                        "This is the result of the get_messages call: {messages:?}"
+                    ));
+                } else {
+                    log!("There was an error deserializeing the value from the get_messages call.");
                 }
             }
         }

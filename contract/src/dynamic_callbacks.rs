@@ -56,16 +56,18 @@ impl Contract {
 
             match result {
                 PromiseResult::Failed => {
-                    log!(format!("Promise number {index} failed."))
+                    log!(format!("Promise number {index} failed."));
                 }
                 PromiseResult::NotReady => {
-                    log!(format!("Promise number {index} is not ready yet."))
+                    log!(format!("Promise number {index} is not ready yet."));
                 }
                 PromiseResult::Successful(value) => {
                     if let Ok(message) = near_sdk::serde_json::from_slice::<String>(&value) {
                         log!(format!(
                             "This is the result of call number {index} is: {message}"
                         ));
+                    } else {
+                        log!(format!("There was an error deserializeing the value from the call number {index}."));
                     }
                 }
             }
