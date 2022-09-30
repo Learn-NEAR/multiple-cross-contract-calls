@@ -1,90 +1,116 @@
 use near_sdk::{
-    assert_one_yocto,
     borsh::{self, BorshDeserialize, BorshSerialize},
-    env, log, near_bindgen, AccountId, Gas, Promise,
+    env, log, near_bindgen, Gas, Promise, PromiseResult,
 };
 
+mod dynamic_callbacks;
+
 const XCC_GAS: Gas = Gas(5 * 10u64.pow(13));
+const HELLO_CONTRACT: &str = "hello-nearverse.testnet";
+const COUNTER_CONTRACT: &str = "counter-nearverse.testnet";
+const GUESTBOOK_CONTRACT: &str = "guestbook-nearverse.testnet";
 
 // Define the contract structure
 #[near_bindgen]
 #[derive(BorshDeserialize, BorshSerialize, Default)]
-pub struct Contract {}
+pub struct Contract;
 
 // Implement the contract structure
 #[near_bindgen]
 impl Contract {
-    /// Donate an equal portion of the attached deposit to the passed array of account IDs.
-    /// This method calls the `donate` function on each of the passed account IDs using a cross
-    /// contract call (which is a `Promise`)
-    #[payable]
-    pub fn donate(&mut self, account_ids: Vec<AccountId>) -> Promise {
-        assert_one_yocto();
-
-        assert!(
-            account_ids.len() < 60,
-            r###"
-            You can only donate to up to 60 accounts (you passed {}),
-            there is not enough gas for more calls.
-            "###,
-            account_ids.len(),
+    /// A method which calls different contracts via cross contract function calls.
+    pub fn call_multiple_contracts(&mut self) -> Promise {
+        // We create a promise that calls the `get_greeting` function on the HELLO_CONTRACT
+        let hello_promise = Promise::new(HELLO_CONTRACT.parse().unwrap()).function_call(
+            "get_greeting".to_owned(),
+            vec![],
+            0,
+            XCC_GAS,
         );
 
-        // Make sure all of the account IDs passed are valid
-        account_ids.iter().for_each(|account_id| {
-            assert!(
-                env::is_valid_account_id(account_id.to_string().as_bytes()),
-                "Invalid account id {}",
-                account_id
-            );
-        });
+        // We create a promise that calls the `get_num` function on the COUNTER_CONTRACT
+        let counter_promise = Promise::new(COUNTER_CONTRACT.parse().unwrap()).function_call(
+            "get_num".to_owned(),
+            vec![],
+            0,
+            XCC_GAS,
+        );
 
-        // Calculate the individual donation amounts.
-        let donation = env::attached_deposit() / account_ids.len() as u128;
+        // We create a promise that calls the `` function on the GUESTBOOK_CONTRACT
+        let guestbook_promise = Promise::new(GUESTBOOK_CONTRACT.parse().unwrap()).function_call(
+            "".to_owned(),
+            vec![],
+            0,
+            XCC_GAS,
+        );
 
-        account_ids
-            .into_iter()
-            .map(|account_id| {
-                // Create a promise for calling this contract to notify the completion of a
-                // cross contract call.
-                let then_promise =
-                    Self::ext(env::current_account_id()).log_after_donation(&account_id, donation);
-
-                // Create a promise to call the donate function on the provided account ID
-                // with the appropriate donation amount.
-                Promise::new(account_id)
-                    .function_call("donate".to_owned(), vec![], donation, XCC_GAS)
-                    .then(then_promise)
-            })
-            // Join all the promises into a single promise using the `and` method.
-            .reduce(|accumulated_promise, current_promise| accumulated_promise.and(current_promise))
-            .unwrap()
+        // Here we join/_and_ all of the different promises and chain a callback that will collect
+        // all of the results.
+        // Keep in mind that we can join/_and_ arbitrary promises together.
+        hello_promise
+            .and(counter_promise)
+            .and(guestbook_promise)
+            .then(Self::ext(env::current_account_id()).callback())
     }
 
     /// Method that can only be called by the current_account_id (same smart contract).
-    /// Used to log the completion of a cross contract donation.
+    /// Used to log the completion of the cross contract calls.
     #[private]
-    pub fn log_after_donation(&self, account_id: &AccountId, donation: u128) {
-        log!(format!("Donated {donation} to {account_id}"));
-    }
+    pub fn callback(&self) {
+        // We read the result of the first promise.
+        let hello_result = env::promise_result(0);
 
-    /// Method that _fake_ donates an equal proportion of the attached deposit to the passed array
-    /// of account IDs.
-    /// This method performs a similar function as the `donate` method above, but instead of
-    /// calling another smart contract it calls a private method on the same smart contract.
-    #[payable]
-    pub fn log(&mut self, account_ids: Vec<AccountId>) {
-        // Calculate the individual donation amounts.
-        let donation = env::attached_deposit() / account_ids.len() as u128;
+        // Handle the result of the promise.
+        match hello_result {
+            PromiseResult::Failed => {
+                log!("hello-nearverse call failed")
+            }
+            PromiseResult::NotReady => {
+                log!("hello-nearverse promise not ready yet")
+            }
+            PromiseResult::Successful(hello_value) => {
+                if let Ok(message) = near_sdk::serde_json::from_slice::<String>(&hello_value) {
+                    log!(format!(
+                        "This is the result of the get_greeting call: {message}"
+                    ));
+                }
+            }
+        }
 
-        account_ids
-            .iter()
-            // Call the `log_once` method to _fake_ donate.
-            .for_each(|account_id| self.log_once(account_id, donation));
-    }
+        // We read the result of the second promise.
+        let counter_result = env::promise_result(1);
 
-    /// Private method to _fake_ donate to a specific account ID.
-    fn log_once(&self, account_id: &AccountId, donation: u128) {
-        log!(format!("Fake donating {donation} to {account_id}"));
+        // Handle the result of the promise.
+        match counter_result {
+            PromiseResult::Failed => {
+                log!("counter-nearverse call failed")
+            }
+            PromiseResult::NotReady => {
+                log!("counter-nearverse promise not ready yet")
+            }
+            PromiseResult::Successful(counter_value) => {
+                if let Ok(num) = near_sdk::serde_json::from_slice::<i64>(&counter_value) {
+                    log!(format!("This is the result of the get_num call: {num}"));
+                }
+            }
+        }
+
+        // We read the result of the third promise.
+        let guestbook_result = env::promise_result(2);
+
+        // Handle the result of the promise.
+        match guestbook_result {
+            PromiseResult::Failed => {
+                log!("guestbook-nearverse call failed")
+            }
+            PromiseResult::NotReady => {
+                log!("guestbook-nearverse promise not ready yet")
+            }
+            PromiseResult::Successful(value) => {
+                if let Ok(num) = near_sdk::serde_json::from_slice::<i64>(&value) {
+                    log!(format!("This is the result of the call: {num}"));
+                }
+            }
+        }
     }
 }
