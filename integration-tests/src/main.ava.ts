@@ -77,7 +77,7 @@ test("similar_contracts", async (t) => {
   t.deepEqual(results, expected)
 });
 
-test("batch_transactions", async (t) => {
+test("batch_actions", async (t) => {
   const { xcc, alice } = t.context.accounts;
 
   const result: string = await alice.call(xcc, "batch_actions", {}, { gas: "300000000000000" });
