@@ -1,91 +1,74 @@
-# Hello NEAR Contract
+# Complex Cross-Contract Calls Examples
 
-The smart contract exposes two methods to enable storing and retrieving a greeting in the NEAR network.
+This contract presents 3 examples on how to do complex cross-contract calls. Particularly, it shows:
+
+1. How to batch method calls to a same contract.
+2. How to call multiple contracts in parallel, each returning a different type.
+3. Different ways of handling the responses in the callback. 
+
+---
+
+## 1. Batch Actions
+You can aggregate multiple actions directed towards one same contract into a batched transaction.
+Methods called this way are executed sequentially, with the added benefit that, if one fails then
+they **all get reverted**.
 
 ```rust
-const DEFAULT_GREETING: &str = "Hello";
+// Promise with batch actions
+Promise::new(self.hello_account.clone())
+  .function_call( ... )
+  .function_call( ... )
+  .function_call( ... )
+  .function_call( ... )
+  .then( Self::ext(env::current_account_id()).batch_actions_callback() )
+```
 
-#[near_bindgen]
-#[derive(BorshDeserialize, BorshSerialize)]
-pub struct Contract {
-    greeting: String,
-}
+In this case, the callback has access to the value returned by the **last
+action** from the chain.
 
-impl Default for Contract {
-    fn default() -> Self {
-        Self{greeting: DEFAULT_GREETING.to_string()}
+---
+
+## 2. Calling Multiple Contracts
+A contract can call multiple other contracts. This creates multiple transactions that execute
+all in parallel. If one of them fails the rest **ARE NOT REVERTED**.
+
+```rust
+let hello_promise = Promise::new(self.hello_account).function_call( ... );
+let counter_promise = Promise::new(self.counter_account).function_call( ... );
+let guestbook_promise = Promise::new(self.guestbook_account).function_call( ... );
+
+// Calling multiple contracts in parallel
+hello_promise
+  .and(counter_promise)
+  .and(guestbook_promise)
+  .then(
+  Self::ext(env::current_account_id()).multiple_contracts_callback(),
+  )
+```
+
+In this case, the callback has access to an **array of responses**, which have either the
+value returned by each call, or an error message.
+
+---
+
+## 3. Calling Contracts With the Same Return Type
+This example is a particular case of the previous one ([2. Calling Multiple Contracts](#2-calling-multiple-contracts)).
+It simply showcases a different way to check the results by directly accessing the `promise_result` array.
+
+```rust
+for index in 0..3 {
+  let result = env::promise_result(index);   // response of the i-th call
+
+  match result {
+    PromiseResult::Successful(value) => {
+      if let Ok(message) = near_sdk::serde_json::from_slice::<String>(&value) {
+        results.push(message.clone());
+        log!(format!("Call {index} returned: {message}"));
+      } else {
+        log!(format!("Error deserializing call {index} result."));
+      }
     }
-}
-
-#[near_bindgen]
-impl Contract {
-    // Public: Returns the stored greeting, defaulting to 'Hello'
-    pub fn get_greeting(&self) -> String {
-        return self.greeting.clone();
-    }
-
-    // Public: Takes a greeting, such as 'howdy', and records it
-    pub fn set_greeting(&mut self, greeting: String) {
-        // Record a log permanently to the blockchain!
-        log!("Saving greeting {}", greeting);
-        self.greeting = greeting;
-    }
+    ...
+  }
 }
 ```
-
-<br />
-
-# Quickstart
-
-1. Make sure you have installed [rust](https://rust.org/).
-2. Install the [`NEAR CLI`](https://github.com/near/near-cli#setup)
-
-<br />
-
-## 1. Build and Deploy the Contract
-You can automatically compile and deploy the contract in the NEAR testnet by running:
-
-```bash
-./deploy.sh
-```
-
-Once finished, check the `neardev/dev-account` file to find the address in which the contract was deployed:
-
-```bash
-cat ./neardev/dev-account
-# e.g. dev-1659899566943-21539992274727
-```
-
-<br />
-
-## 2. Retrieve the Greeting
-
-`get_greeting` is a read-only method (aka `view` method).
-
-`View` methods can be called for **free** by anyone, even people **without a NEAR account**!
-
-```bash
-# Use near-cli to get the greeting
-near view <dev-account> get_greeting
-```
-
-<br />
-
-## 3. Store a New Greeting
-`set_greeting` changes the contract's state, for which it is a `change` method.
-
-`Change` methods can only be invoked using a NEAR account, since the account needs to pay GAS for the transaction.
-
-```bash
-# Use near-cli to set a new greeting
-near call <dev-account> set_greeting '{"greeting":"howdy"}' --accountId <dev-account>
-```
-
-**Tip:** If you would like to call `set_greeting` using your own account, first login into NEAR using:
-
-```bash
-# Use near-cli to login your NEAR account
-near login
-```
-
-and then use the logged account to sign the transaction: `--accountId <your-account>`.

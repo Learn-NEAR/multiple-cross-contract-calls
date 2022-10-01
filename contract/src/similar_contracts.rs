@@ -25,10 +25,13 @@ impl Contract {
     let hello_three = self.promise_set_get(msg3);
 
     // Join all promises and chain a callback to collect their results.
-    hello_one.and(hello_two).and(hello_three).then(
-      Self::ext(env::current_account_id())
-        .with_static_gas(XCC_GAS)
-        .similar_contracts_callback(),
+    hello_one
+      .and(hello_two)
+      .and(hello_three)
+      .then(
+        Self::ext(env::current_account_id())
+          .with_static_gas(XCC_GAS)
+          .similar_contracts_callback(),
     )
   }
 
