@@ -10,7 +10,7 @@ This contract presents 3 examples on how to do complex cross-contract calls. Par
 
 # Quickstart
 
-Clone this repository locally or [**open it in gitpod**](https://gitpod.io/#/github.com/near-examples/counter-rust). Then follow these steps:
+Clone this repository locally or [**open it in gitpod**](https://gitpod.io/#/github.com/near-examples/multiple-cross-contract-calls). Then follow these steps:
 
 ### 1. Install Dependencies
 ```bash
