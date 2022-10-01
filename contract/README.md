@@ -6,7 +6,7 @@ This contract presents 3 examples on how to do complex cross-contract calls. Par
 2. How to call multiple contracts in parallel, each returning a different type.
 3. Different ways of handling the responses in the callback. 
 
----
+<br />
 
 ## 1. Batch Actions
 You can aggregate multiple actions directed towards one same contract into a batched transaction.
@@ -26,7 +26,7 @@ Promise::new(self.hello_account.clone())
 In this case, the callback has access to the value returned by the **last
 action** from the chain.
 
----
+<br />
 
 ## 2. Calling Multiple Contracts
 A contract can call multiple other contracts. This creates multiple transactions that execute
@@ -49,7 +49,7 @@ hello_promise
 In this case, the callback has access to an **array of responses**, which have either the
 value returned by each call, or an error message.
 
----
+<br />
 
 ## 3. Calling Contracts With the Same Return Type
 This example is a particular case of the previous one ([2. Calling Multiple Contracts](#2-calling-multiple-contracts)).
