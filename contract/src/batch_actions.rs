@@ -8,8 +8,8 @@ impl Contract {
     let hi = json!({ "greeting": "hi".to_string() });
     let bye = json!({ "greeting": "bye".to_string() });
 
-    // You can create one transaction with multiple methods calls
-    // to a same contract
+    // You can create one transaction calling multiple methods
+    // on a same contract
     Promise::new(self.hello_account.clone())
       .function_call(
         "set_greeting".to_owned(),

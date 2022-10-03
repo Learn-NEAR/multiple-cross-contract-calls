@@ -6,6 +6,8 @@ use crate::*;
 #[near_bindgen]
 impl Contract {
   fn promise_set_get(&self, message: String) -> Promise {
+    // Aux method to create a batch transaction calling
+    // set_message and get_message in the HELLO CONTRACT
     let args = json!({ "greeting": message });
 
     Promise::new(self.hello_account.clone())
@@ -20,6 +22,7 @@ impl Contract {
 
   pub fn similar_contracts(&mut self) -> Promise {
     // Create promises to call 3 contracts that return the same type
+    // For simplicity here we call the same contract
     let hello_one = self.promise_set_get("hi".to_owned());
     let hello_two = self.promise_set_get("howdy".to_owned());
     let hello_three = self.promise_set_get("bye".to_owned());
