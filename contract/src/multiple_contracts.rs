@@ -32,7 +32,7 @@ impl Contract {
       XCC_GAS,
     );
 
-    // We create a promise that calls the `` function on the GUESTBOOK_CONTRACT
+    // We create a promise that calls the `get_messages` function on the GUESTBOOK_CONTRACT
     let args = json!({ "from_index": "0".to_string(), "limit":2 });
 
     let guestbook_promise = Promise::new(self.guestbook_account.clone()).function_call(
@@ -60,6 +60,7 @@ impl Contract {
     #[callback_result] counter_result: Result<i8, PromiseError>,
     #[callback_result] guestbook_result: Result<Vec<PostedMessage>, PromiseError>,
   ) -> (String, i8, Vec<PostedMessage>) {
+    // The callback has access to the result of the 3 calls
     let mut greeting: String = "".to_string();
     let mut counter: i8 = 0;
     let mut messages: Vec<PostedMessage> = vec![];
