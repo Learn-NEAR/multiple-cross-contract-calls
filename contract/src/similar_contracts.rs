@@ -18,11 +18,11 @@ impl Contract {
       .function_call("get_greeting".to_owned(), vec![], 0, XCC_GAS)
   }
 
-  pub fn similar_contracts(&mut self, msg1: String, msg2: String, msg3: String) -> Promise {
+  pub fn similar_contracts(&mut self) -> Promise {
     // Create promises to call 3 contracts that return the same type
-    let hello_one = self.promise_set_get(msg1);
-    let hello_two = self.promise_set_get(msg2);
-    let hello_three = self.promise_set_get(msg3);
+    let hello_one = self.promise_set_get("hi".to_owned());
+    let hello_two = self.promise_set_get("howdy".to_owned());
+    let hello_three = self.promise_set_get("bye".to_owned());
 
     // Join all promises and chain a callback to collect their results.
     hello_one

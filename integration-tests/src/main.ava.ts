@@ -70,7 +70,7 @@ test("multiple_contract tests", async (t) => {
 test("similar_contracts", async (t) => {
   const { xcc, alice } = t.context.accounts;
 
-  const results: [[string]] = await alice.call(xcc, "similar_contracts", { "msg1": "hi", "msg2": "howdy", "msg3": "bye" }, { gas: "300000000000000" });
+  const results: [[string]] = await alice.call(xcc, "similar_contracts", {}, { gas: "300000000000000" });
 
   const expected = ["hi", "howdy", "bye"]
 
