@@ -4,11 +4,12 @@ This contract presents 3 examples on how to do complex cross-contract calls. Par
 
 1. How to batch method calls to a same contract.
 2. How to call multiple contracts in parallel, each returning a different type.
-3. Different ways of handling the responses in the callback. 
+3. Different ways of handling the responses in the callback.
 
 <br />
 
 ## 1. Batch Actions
+
 You can aggregate multiple actions directed towards one same contract into a batched transaction.
 Methods called this way are executed sequentially, with the added benefit that, if one fails then
 they **all get reverted**.
@@ -29,6 +30,7 @@ action** from the chain.
 <br />
 
 ## 2. Calling Multiple Contracts
+
 A contract can call multiple other contracts. This creates multiple transactions that execute
 all in parallel. If one of them fails the rest **ARE NOT REVERTED**.
 
@@ -52,6 +54,7 @@ value returned by each call, or an error message.
 <br />
 
 ## 3. Calling Contracts With the Same Return Type
+
 This example is a particular case of the previous one ([2. Calling Multiple Contracts](#2-calling-multiple-contracts)).
 It simply showcases a different way to check the results by directly accessing the `promise_result` array.
 

@@ -5,7 +5,7 @@ mod batch_actions;
 mod multiple_contracts;
 mod similar_contracts;
 
-const XCC_GAS: Gas = Gas(10 * 10u64.pow(12));
+const XCC_GAS: Gas = Gas(10u64.pow(13));
 const NO_DEPOSIT: Balance = 0;
 const NO_ARGS: Vec<u8> = vec![];
 const HELLO_CONTRACT: &str = "hello.near-examples.testnet";
